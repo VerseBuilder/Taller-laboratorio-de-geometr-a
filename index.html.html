@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laboratorio de Geometría</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080810;
+    --surface: #0f0f1a;
+    --surface2: #161625;
+    --border: #252540;
+    --accent1: #ffe133;
+    --accent2: #00ffb3;
+    --accent3: #ff4d6d;
+    --accent4: #bf5fff;
+    --accent5: #00c8ff;
+    --text: #eeeeff;
+    --muted: #6868a0;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 10%, rgba(255,225,51,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 80% 80%, rgba(0,255,179,0.05) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 50% 50%, rgba(191,95,255,0.04) 0%, transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: relative;
+    padding: 3rem 2rem 2.5rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .lab-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent1);
+    border: 1px solid var(--accent1);
+    padding: 0.3rem 1rem;
+    border-radius: 2px;
+    margin-bottom: 1.2rem;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.1s forwards;
+    box-shadow: 0 0 20px rgba(255,225,51,0.2);
+  }
+
+  h1 {
+    font-size: clamp(2.4rem, 6vw, 4.2rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.25s forwards;
+  }
+
+  h1 .geo { color: var(--accent1); text-shadow: 0 0 40px rgba(255,225,51,0.5); }
+  h1 .sym { font-size: 0.8em; margin-right: 0.3em; filter: drop-shadow(0 0 12px var(--accent1)); }
+
+  .subtitle {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 0.8rem;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.4s forwards;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── AUTHOR TAG ── */
+  .author-tag {
+    position: fixed;
+    bottom: 1.25rem; right: 1.25rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent1);
+    padding: 0.5rem 0.9rem;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--muted);
+    z-index: 100;
+    line-height: 1.6;
+  }
+  .author-tag strong { color: var(--accent1); display: block; font-size: 0.75rem; }
+
+  /* ── NAV TABS ── */
+  nav {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 2rem 1rem 1rem;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.55s forwards;
+  }
+
+  .tab-btn {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.88rem;
+    letter-spacing: 0.05em;
+    padding: 0.65rem 1.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .tab-btn::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0;
+    width: 0; height: 3px;
+    background: var(--c);
+    transition: width 0.25s;
+  }
+  .tab-btn:hover { color: var(--text); border-color: var(--muted); }
+  .tab-btn:hover::after { width: 100%; }
+  .tab-btn.active { color: var(--bg); background: var(--c); border-color: var(--c); box-shadow: 0 0 20px color-mix(in srgb, var(--c) 40%, transparent); }
+
+  .tab-btn[data-tab="perimetro"] { --c: var(--accent1); }
+  .tab-btn[data-tab="area"]      { --c: var(--accent2); }
+  .tab-btn[data-tab="volumen"]   { --c: var(--accent3); }
+  .tab-btn[data-tab="pitagoras"] { --c: var(--accent4); }
+
+  /* ── SECTIONS ── */
+  main { padding: 1.5rem 1rem 6rem; max-width: 1100px; margin: 0 auto; }
+
+  .section { display: none; }
+  .section.active {
+    display: grid;
+    gap: 1.5rem;
+    animation: fadeIn 0.35s ease;
+  }
+  @media (min-width: 700px) {
+    .section.active { grid-template-columns: 1fr 1fr; }
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+  }
+  .card-title {
+    font-size: 0.68rem;
+    font-family: var(--font-mono);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 1.2rem;
+    color: var(--muted);
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--c, var(--accent1));
+    box-shadow: 0 0 8px var(--c, var(--accent1));
+  }
+
+  /* ── FORMULA BOX ── */
+  .formula-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--c, var(--accent1));
+    border-radius: 4px;
+    padding: 1rem;
+    margin: 1rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.9;
+  }
+  .formula-box .label { color: var(--muted); font-size: 0.68rem; letter-spacing: 0.1em; }
+  .formula-box .eq    { color: var(--text); }
+  .formula-box .result { font-size: 1.15rem; font-weight: 700; color: var(--c, var(--accent1)); }
+
+  /* ── INPUTS ── */
+  .input-group { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 1rem; }
+  .input-group label { font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); letter-spacing: 0.1em; }
+  .slider-row { display: flex; align-items: center; gap: 0.75rem; }
+
+  input[type=range] {
+    flex: 1; -webkit-appearance: none; height: 4px;
+    border-radius: 2px; background: var(--border); outline: none; cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--c, var(--accent1)); cursor: pointer; transition: transform 0.15s;
+    box-shadow: 0 0 8px var(--c, var(--accent1));
+  }
+  input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.3); }
+
+  .val-display {
+    font-family: var(--font-mono); font-size: 0.82rem;
+    color: var(--c, var(--accent1)); min-width: 2.5rem; text-align: right; font-weight: 700;
+  }
+
+  /* ── CANVAS ── */
+  canvas { display: block; width: 100%; border-radius: 6px; background: var(--surface2); }
+
+  /* ── STEPS ── */
+  .steps {
+    font-family: var(--font-mono); font-size: 0.76rem; line-height: 2;
+    color: var(--muted); border-left: 2px solid var(--border); padding-left: 1rem;
+  }
+  .steps .step-highlight { color: var(--text); font-weight: 700; }
+
+  /* ── SHAPE SELECTOR ── */
+  .shape-selector { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .shape-btn {
+    font-family: var(--font-mono); font-size: 0.68rem;
+    padding: 0.3rem 0.75rem; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); border-radius: 3px;
+    cursor: pointer; transition: all 0.2s; letter-spacing: 0.04em;
+  }
+  .shape-btn:hover { color: var(--text); border-color: var(--muted); }
+  .shape-btn.active { background: var(--c, var(--accent2)); border-color: var(--c, var(--accent2)); color: var(--bg); box-shadow: 0 0 12px color-mix(in srgb, var(--c, var(--accent2)) 50%, transparent); }
+
+  /* ── 3D CUBE ── */
+  .cube-scene {
+    display: flex; justify-content: center; align-items: center;
+    padding: 2rem 0; perspective: 600px;
+  }
+  .cube-wrap { position: relative; width: 100px; height: 100px; transform-style: preserve-3d; animation: rotateCube 8s linear infinite; }
+  @keyframes rotateCube { from { transform: rotateX(-20deg) rotateY(0deg); } to { transform: rotateX(-20deg) rotateY(360deg); } }
+  .cube-face {
+    position: absolute; inset: 0;
+    border: 1px solid rgba(255,77,109,0.6);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 0.65rem;
+    color: rgba(255,77,109,0.8); transition: all 0.4s;
+  }
+  .face-front  { transform: translateZ(50px);  background: rgba(255,77,109,0.08); }
+  .face-back   { transform: rotateY(180deg) translateZ(50px); background: rgba(255,77,109,0.04); }
+  .face-left   { transform: rotateY(-90deg) translateZ(50px); background: rgba(255,77,109,0.04); }
+  .face-right  { transform: rotateY(90deg) translateZ(50px);  background: rgba(255,77,109,0.06); }
+  .face-top    { transform: rotateX(90deg) translateZ(50px);  background: rgba(255,77,109,0.1); }
+  .face-bottom { transform: rotateX(-90deg) translateZ(50px); background: rgba(255,77,109,0.04); }
+
+  /* ── SPHERE ── */
+  .sphere-scene { display: flex; justify-content: center; align-items: center; padding: 2rem 0; }
+  .sphere-3d {
+    width: 100px; height: 100px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(255,77,109,0.6), rgba(255,77,109,0.1) 60%, rgba(100,20,40,0.8));
+    box-shadow: 0 0 30px rgba(255,77,109,0.4), inset -10px -10px 20px rgba(0,0,0,0.5), inset 5px 5px 15px rgba(255,77,109,0.2);
+    animation: pulseSphere 3s ease-in-out infinite;
+    transition: width 0.3s, height 0.3s;
+  }
+  @keyframes pulseSphere {
+    0%,100% { box-shadow: 0 0 30px rgba(255,77,109,0.4), inset -10px -10px 20px rgba(0,0,0,0.5); }
+    50% { box-shadow: 0 0 50px rgba(255,77,109,0.6), inset -10px -10px 20px rgba(0,0,0,0.5); }
+  }
+
+  /* ── PITAGORAS VISUAL ── */
+  .squares-viz {
+    display: flex; gap: 0.75rem; align-items: flex-end;
+    margin: 0.75rem 0; font-family: var(--font-mono); font-size: 0.72rem;
+  }
+  .sq-block { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+  .sq-inner { border-radius: 3px; border: 2px solid; transition: all 0.3s; min-width: 10px; min-height: 10px; }
+  .sq-label { color: var(--muted); }
+
+  /* ── SECTION HEADER ── */
+  .section-header {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .section-header h2 { font-size: clamp(1.4rem, 4vw, 2rem); font-weight: 800; }
+  .section-header .accent-line { flex: 1; height: 1px; background: var(--border); }
+  .section-header .icon { font-size: 2rem; filter: drop-shadow(0 0 12px var(--c)); }
+
+  /* ── RESULT PILL ── */
+  .result-pill {
+    display: inline-block; padding: 0.4rem 1rem; border-radius: 100px;
+    font-family: var(--font-mono); font-weight: 700; font-size: 1.1rem;
+    background: color-mix(in srgb, var(--c, var(--accent1)) 15%, transparent);
+    color: var(--c, var(--accent1));
+    border: 1px solid color-mix(in srgb, var(--c, var(--accent1)) 40%, transparent);
+    margin-top: 0.5rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="lab-badge">◈ Matemáticas Interactivas</div>
+  <h1><span class="sym">📐</span>Laboratorio de <span class="geo">Geometría</span></h1>
+  <p class="subtitle">// Explora · Mide · Calcula · Comprende</p>
+</header>
+
+<nav>
+  <button class="tab-btn active" data-tab="perimetro" style="--c:var(--accent1)">⬡ Perímetro</button>
+  <button class="tab-btn" data-tab="area"      style="--c:var(--accent2)">◼ Área</button>
+  <button class="tab-btn" data-tab="volumen"   style="--c:var(--accent3)">◈ Volumen</button>
+  <button class="tab-btn" data-tab="pitagoras" style="--c:var(--accent4)">△ Pitágoras</button>
+</nav>
+
+<main>
+
+  <!-- SECCIÓN 1 — PERÍMETRO -->
+  <section id="sec-perimetro" class="section active" style="--c:var(--accent1)">
+    <div class="section-header">
+      <div class="icon" style="--c:var(--accent1)">⬡</div>
+      <h2>Perímetro</h2>
+      <div class="accent-line"></div>
+    </div>
+
+    <div class="card" style="--c:var(--accent1)">
+      <div class="card-title">Figura</div>
+      <div class="shape-selector" style="--c:var(--accent1)">
+        <button class="shape-btn active" onclick="setPerShape('rectangulo')">Rectángulo</button>
+        <button class="shape-btn" onclick="setPerShape('cuadrado')">Cuadrado</button>
+        <button class="shape-btn" onclick="setPerShape('triangulo')">Triángulo</button>
+        <button class="shape-btn" onclick="setPerShape('pentagono')">Pentágono</button>
+        <button class="shape-btn" onclick="setPerShape('hexagono')">Hexágono</button>
+        <button class="shape-btn" onclick="setPerShape('circunferencia')">Circunferencia</button>
+      </div>
+
+      <div id="per-inputs"></div>
+
+      <div class="formula-box" style="--c:var(--accent1)">
+        <div class="label">FÓRMULA</div>
+        <div class="eq" id="p-formula">P = 2 × (b + h)</div>
+        <div class="eq" id="p-step2">P = 2 × (10 + 6)</div>
+        <div class="eq result" id="p-result">P = 32</div>
+      </div>
+
+      <div class="steps">
+        <div id="p-s1">Paso 1: P = 2 × (b + h)</div>
+        <div id="p-s2">Paso 2: P = 2 × (10 + 6)</div>
+        <div id="p-s3" style="color:var(--accent1)">Resultado: P = 32</div>
+      </div>
+    </div>
+
+    <div class="card" style="--c:var(--accent1)">
+      <div class="card-title">Visualización</div>
+      <canvas id="perimetro-canvas" height="280"></canvas>
+    </div>
+  </section>
+
+  <!-- SECCIÓN 2 — ÁREA -->
+  <section id="sec-area" class="section" style="--c:var(--accent2)">
+    <div class="section-header">
+      <div class="icon" style="--c:var(--accent2)">◼</div>
+      <h2>Área</h2>
+      <div class="accent-line"></div>
+    </div>
+
+    <div class="card" style="--c:var(--accent2)">
+      <div class="card-title">Figura</div>
+      <div class="shape-selector" style="--c:var(--accent2)">
+        <button class="shape-btn active" onclick="setShape('cuadrado')">Cuadrado</button>
+        <button class="shape-btn" onclick="setShape('rectangulo')">Rectángulo</button>
+        <button class="shape-btn" onclick="setShape('triangulo')">Triángulo</button>
+        <button class="shape-btn" onclick="setShape('circulo')">Círculo</button>
+        <button class="shape-btn" onclick="setShape('trapecio')">Trapecio</button>
+        <button class="shape-btn" onclick="setShape('rombo')">Rombo</button>
+      </div>
+
+      <div id="area-inputs"></div>
+
+      <div class="formula-box" style="--c:var(--accent2)">
+        <div class="label">FÓRMULA</div>
+        <div class="eq" id="a-formula">A = lado²</div>
+        <div class="eq" id="a-step">A = 8² = 64</div>
+        <div class="eq result" id="a-result">A = 64</div>
+      </div>
+
+      <div class="steps">
+        <div id="a-s1">Paso 1: A = lado²</div>
+        <div id="a-s2">Paso 2: A = 8²</div>
+        <div id="a-s3" style="color:var(--accent2)">Resultado: A = 64</div>
+      </div>
+    </div>
+
+    <div class="card" style="--c:var(--accent2)">
+      <div class="card-title">Visualización</div>
+      <canvas id="area-canvas" height="280"></canvas>
+    </div>
+  </section>
+
+  <!-- SECCIÓN 3 — VOLUMEN -->
+  <section id="sec-volumen" class="section" style="--c:var(--accent3)">
+    <div class="section-header">
+      <div class="icon" style="--c:var(--accent3)">◈</div>
+      <h2>Volumen</h2>
+      <div class="accent-line"></div>
+    </div>
+
+    <div class="card" style="--c:var(--accent3)">
+      <div class="card-title">Figura 3D</div>
+      <div class="shape-selector" style="--c:var(--accent3)">
+        <button class="shape-btn active" onclick="setVolShape('cubo')">Cubo</button>
+        <button class="shape-btn" onclick="setVolShape('cilindro')">Cilindro</button>
+        <button class="shape-btn" onclick="setVolShape('prisma')">Prisma</button>
+        <button class="shape-btn" onclick="setVolShape('esfera')">Esfera</button>
+      </div>
+
+      <div id="vol-inputs"></div>
+
+      <div class="formula-box" style="--c:var(--accent3)">
+        <div class="label">FÓRMULA</div>
+        <div class="eq" id="v-formula">V = a³</div>
+        <div class="eq" id="v-step">V = 5³ = 125</div>
+        <div class="eq result" id="v-result">V = 125</div>
+      </div>
+
+      <div class="steps">
+        <div id="v-s1">Paso 1: V = a³</div>
+        <div id="v-s2">Paso 2: V = 5 × 5 × 5</div>
+        <div id="v-s3" style="color:var(--accent3)">Resultado: V = 125 u³</div>
+      </div>
+    </div>
+
+    <div class="card" style="--c:var(--accent3)">
+      <div class="card-title">Visualización 3D</div>
+      <!-- Cube 3D CSS -->
+      <div id="vol-3d-css">
+        <div class="cube-scene">
+          <div class="cube-wrap" id="cube3d">
+            <div class="cube-face face-front">F</div>
+            <div class="cube-face face-back">A</div>
+            <div class="cube-face face-left">I</div>
+            <div class="cube-face face-right">D</div>
+            <div class="cube-face face-top">T</div>
+            <div class="cube-face face-bottom">B</div>
+          </div>
+        </div>
+      </div>
+      <!-- Sphere CSS -->
+      <div id="vol-3d-sphere" style="display:none">
+        <div class="sphere-scene">
+          <div class="sphere-3d" id="sphere3d"></div>
+        </div>
+      </div>
+      <canvas id="vol-canvas" height="280"></canvas>
+    </div>
+  </section>
+
+  <!-- SECCIÓN 4 — PITÁGORAS -->
+  <section id="sec-pitagoras" class="section" style="--c:var(--accent4)">
+    <div class="section-header">
+      <div class="icon" style="--c:var(--accent4)">△</div>
+      <h2>Teorema de Pitágoras</h2>
+      <div class="accent-line"></div>
+    </div>
+
+    <div class="card" style="--c:var(--accent4)">
+      <div class="card-title">Catetos</div>
+
+      <div class="input-group" style="--c:var(--accent4)">
+        <label>CATETO a</label>
+        <div class="slider-row">
+          <input type="range" id="pa" min="1" max="15" value="3" oninput="updatePit()">
+          <span class="val-display" id="pa-v" style="color:var(--accent4)">3</span>
+        </div>
+      </div>
+      <div class="input-group" style="--c:var(--accent4)">
+        <label>CATETO b</label>
+        <div class="slider-row">
+          <input type="range" id="pit-b" min="1" max="15" value="4" oninput="updatePit()">
+          <span class="val-display" id="pb2-v" style="color:var(--accent4)">4</span>
+        </div>
+      </div>
+
+      <div class="formula-box" style="--c:var(--accent4)">
+        <div class="label">TEOREMA DE PITÁGORAS</div>
+        <div class="eq">a² + b² = c²</div>
+        <div class="eq" id="pit-step">3² + 4² = c²</div>
+        <div class="eq" id="pit-step2">9 + 16 = 25</div>
+        <div class="eq result" id="pit-result">c = 5.00</div>
+      </div>
+
+      <div class="squares-viz">
+        <div class="sq-block">
+          <div class="sq-inner" id="sq-a" style="border-color:var(--accent4);background:rgba(191,95,255,0.15)"></div>
+          <span class="sq-label">a²</span>
+        </div>
+        <div style="font-family:var(--font-mono);padding-bottom:1.2rem;color:var(--muted)">+</div>
+        <div class="sq-block">
+          <div class="sq-inner" id="sq-b" style="border-color:#f472b6;background:rgba(244,114,182,0.12)"></div>
+          <span class="sq-label">b²</span>
+        </div>
+        <div style="font-family:var(--font-mono);padding-bottom:1.2rem;color:var(--muted)">=</div>
+        <div class="sq-block">
+          <div class="sq-inner" id="sq-c" style="border-color:var(--accent1);background:rgba(255,225,51,0.12)"></div>
+          <span class="sq-label">c²</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="--c:var(--accent4)">
+      <div class="card-title">Triángulo rectángulo</div>
+      <canvas id="pitagoras-canvas" height="280"></canvas>
+    </div>
+  </section>
+
+</main>
+
+<div class="author-tag">
+  <strong>Desarrollado por Raúl Olmos</strong>
+  Laboratorio de Geometría Interactiva
+</div>
+
+<script>
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   NAVEGACIÓN DE PESTAÑAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('sec-' + btn.dataset.tab).classList.add('active');
+    setTimeout(() => {
+      if (btn.dataset.tab === 'perimetro') drawPerimetro();
+      if (btn.dataset.tab === 'area')      drawArea();
+      if (btn.dataset.tab === 'volumen')   { initVolInputs(); }
+      if (btn.dataset.tab === 'pitagoras') drawPit();
+    }, 50);
+  });
+});
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HELPER: canvas DPI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function setupCanvas(id) {
+  const cv = document.getElementById(id);
+  const dpr = window.devicePixelRatio || 1;
+  const displayW = cv.offsetWidth;
+  const displayH = parseInt(cv.getAttribute('height')) || 260;
+  const needResize = cv.width !== displayW * dpr || cv.height !== displayH * dpr;
+  if (needResize) {
+    cv.width  = displayW * dpr;
+    cv.height = displayH * dpr;
+  }
+  const ctx = cv.getContext('2d');
+  // Always reset and reapply the scale so sliders never corrupt the transform
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { cv, ctx, W: displayW, H: displayH };
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ANIMACIÓN PERÍMETRO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+let animOffset = 0;
+function animLoop() {
+  animOffset = (animOffset + 0.4) % 20;
+  const cv = document.getElementById('perimetro-canvas');
+  if (cv && cv.offsetParent !== null) _drawPerimetroFrame(animOffset);
+  requestAnimationFrame(animLoop);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   1. PERÍMETRO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+let perShape = 'rectangulo';
+
+function setPerShape(s) {
+  perShape = s;
+  document.querySelectorAll('#sec-perimetro .shape-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  initPerInputs();
+}
+
+function initPerInputs() {
+  const c = document.getElementById('per-inputs');
+  c.innerHTML = '';
+  const mk = (id, label, min, max, val) =>
+    `<div class="input-group" style="--c:var(--accent1)"><label>${label}</label><div class="slider-row">
+      <input type="range" id="${id}" min="${min}" max="${max}" value="${val}" oninput="updatePerimetro()">
+      <span class="val-display" id="${id}-v">${val}</span></div></div>`;
+
+  if (perShape === 'rectangulo') {
+    c.innerHTML = mk('pb','BASE (b)',1,20,10) + mk('ph','ALTURA (h)',1,20,6);
+  } else if (perShape === 'cuadrado') {
+    c.innerHTML = mk('pla','LADO (l)',1,20,8);
+  } else if (perShape === 'triangulo') {
+    c.innerHTML = mk('pt1','LADO a',1,20,6) + mk('pt2','LADO b',1,20,8) + mk('pt3','LADO c',1,20,10);
+  } else if (perShape === 'pentagono') {
+    c.innerHTML = mk('pp','LADO (l)',1,15,7);
+  } else if (perShape === 'hexagono') {
+    c.innerHTML = mk('ph6','LADO (l)',1,15,6);
+  } else if (perShape === 'circunferencia') {
+    c.innerHTML = mk('pr','RADIO (r)',1,12,5);
+  }
+  updatePerimetro();
+}
+
+function updatePerimetro() {
+  let formula='', step='', result='', s1='', s2='', s3='';
+
+  if (perShape === 'rectangulo') {
+    const b = +document.getElementById('pb').value;
+    const h = +document.getElementById('ph').value;
+    document.getElementById('pb-v').textContent = b;
+    document.getElementById('ph-v').textContent = h;
+    const P = 2*(b+h);
+    formula = 'P = 2 × (b + h)'; step = `P = 2 × (${b} + ${h})`; result = `P = ${P}`;
+    s1 = 'Paso 1: P = 2 × (b + h)'; s2 = `Paso 2: P = 2 × ${b+h}`; s3 = `Resultado: P = ${P}`;
+  } else if (perShape === 'cuadrado') {
+    const l = +document.getElementById('pla').value;
+    document.getElementById('pla-v').textContent = l;
+    const P = 4*l;
+    formula = 'P = 4 × l'; step = `P = 4 × ${l}`; result = `P = ${P}`;
+    s1 = 'Paso 1: P = 4 × l'; s2 = `Paso 2: P = 4 × ${l}`; s3 = `Resultado: P = ${P}`;
+  } else if (perShape === 'triangulo') {
+    const a = +document.getElementById('pt1').value;
+    const b = +document.getElementById('pt2').value;
+    const cc = +document.getElementById('pt3').value;
+    document.getElementById('pt1-v').textContent = a;
+    document.getElementById('pt2-v').textContent = b;
+    document.getElementById('pt3-v').textContent = cc;
+    const P = a+b+cc;
+    formula = 'P = a + b + c'; step = `P = ${a} + ${b} + ${cc}`; result = `P = ${P}`;
+    s1 = 'Paso 1: P = a + b + c'; s2 = `Paso 2: P = ${a} + ${b} + ${cc}`; s3 = `Resultado: P = ${P}`;
+  } else if (perShape === 'pentagono') {
+    const l = +document.getElementById('pp').value;
+    document.getElementById('pp-v').textContent = l;
+    const P = 5*l;
+    formula = 'P = 5 × l'; step = `P = 5 × ${l}`; result = `P = ${P}`;
+    s1 = 'Paso 1: P = 5 × lado'; s2 = `Paso 2: P = 5 × ${l}`; s3 = `Resultado: P = ${P}`;
+  } else if (perShape === 'hexagono') {
+    const l = +document.getElementById('ph6').value;
+    document.getElementById('ph6-v').textContent = l;
+    const P = 6*l;
+    formula = 'P = 6 × l'; step = `P = 6 × ${l}`; result = `P = ${P}`;
+    s1 = 'Paso 1: P = 6 × lado'; s2 = `Paso 2: P = 6 × ${l}`; s3 = `Resultado: P = ${P}`;
+  } else if (perShape === 'circunferencia') {
+    const r = +document.getElementById('pr').value;
+    document.getElementById('pr-v').textContent = r;
+    const C = (2*Math.PI*r).toFixed(2);
+    formula = 'C = 2π × r'; step = `C = 2π × ${r}`; result = `C ≈ ${C}`;
+    s1 = 'Paso 1: C = 2π × r'; s2 = `Paso 2: C = 2 × 3.1416 × ${r}`; s3 = `Resultado: C ≈ ${C}`;
+  }
+
+  document.getElementById('p-formula').textContent = formula;
+  document.getElementById('p-step2').textContent = step;
+  document.getElementById('p-result').textContent = result;
+  document.getElementById('p-s1').textContent = s1;
+  document.getElementById('p-s2').textContent = s2;
+  document.getElementById('p-s3').textContent = s3;
+}
+
+function drawPerimetro() { _drawPerimetroFrame(animOffset); }
+
+function _drawPerimetroFrame(offset) {
+  const { ctx, W, H } = setupCanvas('perimetro-canvas');
+  ctx.clearRect(0, 0, W, H);
+  const PAD = 48;
+  const col = '#ffe133';
+
+  ctx.shadowColor = 'rgba(255,225,51,0.4)';
+  ctx.strokeStyle = col;
+  ctx.fillStyle = 'rgba(255,225,51,0.06)';
+  ctx.lineWidth = 2.5;
+
+  function setDash() { ctx.setLineDash([7,4]); ctx.lineDashOffset = -offset; }
+  function clearDash() { ctx.setLineDash([]); }
+
+  function label(text, x, y) {
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = col;
+    ctx.font = '700 11px Space Mono, monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, y);
+  }
+
+  if (perShape === 'rectangulo') {
+    const b = +document.getElementById('pb').value;
+    const h = +document.getElementById('ph').value;
+    const sc = Math.min((W-PAD*2)/b, (H-PAD*2)/h);
+    const rW = b*sc, rH = h*sc;
+    const x = (W-rW)/2, y = (H-rH)/2;
+    ctx.shadowBlur = 20; ctx.fillRect(x,y,rW,rH);
+    setDash(); ctx.shadowBlur=10; ctx.strokeRect(x,y,rW,rH); clearDash();
+    label(`b=${b}`, W/2, y-14); label(`b=${b}`, W/2, y+rH+16);
+    label(`h=${h}`, x-18, H/2); label(`h=${h}`, x+rW+18, H/2);
+    // corners
+    ctx.fillStyle = col; ctx.shadowBlur = 12;
+    [[x,y],[x+rW,y],[x+rW,y+rH],[x,y+rH]].forEach(([cx,cy]) => {
+      ctx.beginPath(); ctx.arc(cx,cy,4,0,Math.PI*2); ctx.fill();
+    });
+
+  } else if (perShape === 'cuadrado') {
+    const l = +document.getElementById('pla').value;
+    const maxSlider = 20;
+    const pxPerUnit = Math.min((W-PAD*2), (H-PAD*2)) / maxSlider;
+    const s = l * pxPerUnit;
+    const x=(W-s)/2, y=(H-s)/2;
+    ctx.shadowBlur=20; ctx.fillRect(x,y,s,s);
+    setDash(); ctx.shadowBlur=10; ctx.strokeRect(x,y,s,s); clearDash();
+    label(`l=${l}`, W/2, y-14); label(`l=${l}`, x-18, H/2);
+    ctx.fillStyle=col; ctx.shadowBlur=12;
+    [[x,y],[x+s,y],[x+s,y+s],[x,y+s]].forEach(([cx,cy])=>{ ctx.beginPath();ctx.arc(cx,cy,4,0,Math.PI*2);ctx.fill(); });
+
+  } else if (perShape === 'triangulo') {
+    const a = +document.getElementById('pt1').value;
+    const b = +document.getElementById('pt2').value;
+    const cc = +document.getElementById('pt3').value;
+    // triangle with sides a, b, c using law of cosines
+    const cosA = (b*b + cc*cc - a*a) / (2*b*cc);
+    const angleA = Math.acos(Math.max(-1,Math.min(1,cosA)));
+    const sc = Math.min((W-PAD*2)/cc, (H-PAD*2)/b) * 0.9;
+    const p0 = {x: (W-cc*sc)/2, y: H/2+b*sc*0.4};
+    const p1 = {x: p0.x+cc*sc, y: p0.y};
+    const p2 = {x: p0.x+b*sc*Math.cos(angleA), y: p0.y-b*sc*Math.sin(Math.max(0.1,angleA))};
+    ctx.beginPath(); ctx.moveTo(p0.x,p0.y); ctx.lineTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.closePath();
+    ctx.shadowBlur=20; ctx.fill();
+    setDash(); ctx.shadowBlur=10; ctx.stroke(); clearDash();
+    // side labels
+    label(`a=${a}`, (p2.x+p0.x)/2-18, (p2.y+p0.y)/2);
+    label(`b=${b}`, (p2.x+p1.x)/2+18, (p2.y+p1.y)/2);
+    label(`c=${cc}`, (p0.x+p1.x)/2, p0.y+16);
+    ctx.fillStyle=col; ctx.shadowBlur=12;
+    [p0,p1,p2].forEach(p=>{ ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill(); });
+
+  } else if (perShape === 'pentagono') {
+    const l = +document.getElementById('pp').value;
+    drawRegularPolygon(ctx, 5, W, H, PAD, l, offset, col, `l=${l}`, 5);
+
+  } else if (perShape === 'hexagono') {
+    drawRegularPolygon(ctx, 6, W, H, PAD, +document.getElementById('ph6').value, offset, col, `l=${document.getElementById('ph6').value}`, 6);
+
+  } else if (perShape === 'circunferencia') {
+    const r = +document.getElementById('pr').value;
+    const maxR = Math.min(W,H)/2 - PAD;
+    const sc = maxR/12;
+    const rs = r*sc;
+    const cx2=W/2, cy2=H/2;
+    ctx.shadowBlur=25; ctx.beginPath(); ctx.arc(cx2,cy2,rs,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,225,51,0.06)'; ctx.fill();
+    setDash(); ctx.shadowBlur=10; ctx.strokeStyle=col; ctx.stroke(); clearDash();
+    // radio
+    ctx.beginPath(); ctx.moveTo(cx2,cy2); ctx.lineTo(cx2+rs,cy2);
+    ctx.strokeStyle='rgba(255,225,51,0.6)'; ctx.lineWidth=1.5;
+    ctx.setLineDash([4,3]); ctx.stroke(); clearDash();
+    ctx.fillStyle=col; ctx.shadowBlur=10;
+    ctx.beginPath(); ctx.arc(cx2,cy2,4,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx2+rs,cy2,4,0,Math.PI*2); ctx.fill();
+    label(`r = ${r}`, cx2+rs/2, cy2-12);
+    label(`C ≈ ${(2*Math.PI*r).toFixed(2)}`, cx2, cy2+rs+18);
+  }
+  ctx.shadowBlur=0;
+}
+
+function drawRegularPolygon(ctx, n, W, H, PAD, side, offset, col, sideLabel, nSides) {
+  const angleStep = (2*Math.PI)/n;
+  const startAngle = -Math.PI/2;
+  // Fixed scale: base it on max slider value (15) so shape visually grows/shrinks with slider
+  const maxSlider = 15;
+  const maxR = Math.min(W, H) / 2 - PAD;
+  // At max slider value, the circumradius would be maxSlider/(2*sin(π/n))
+  const maxCircumR = maxSlider / (2 * Math.sin(Math.PI / n));
+  const pxPerUnit = maxR / maxCircumR;
+  // Actual circumradius in pixels proportional to current side value
+  const R = side / (2 * Math.sin(Math.PI / n));
+  const rr = R * pxPerUnit;
+  const cx=W/2, cy=H/2;
+  const pts = [];
+  for(let i=0;i<n;i++) {
+    pts.push({ x: cx + rr*Math.cos(startAngle+angleStep*i), y: cy + rr*Math.sin(startAngle+angleStep*i) });
+  }
+  ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+  pts.forEach(p=>ctx.lineTo(p.x,p.y)); ctx.closePath();
+  ctx.shadowBlur=20; ctx.fillStyle='rgba(255,225,51,0.06)'; ctx.fill();
+  ctx.setLineDash([7,4]); ctx.lineDashOffset=-offset;
+  ctx.shadowBlur=10; ctx.strokeStyle=col; ctx.lineWidth=2.5; ctx.stroke();
+  ctx.setLineDash([]);
+  // side labels
+  ctx.fillStyle=col; ctx.font='700 10px Space Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let i=0;i<n;i++) {
+    const nx = pts[(i+1)%n];
+    const mx = (pts[i].x+nx.x)/2, my = (pts[i].y+nx.y)/2;
+    const dx=mx-cx, dy=my-cy; const dd=Math.sqrt(dx*dx+dy*dy)||1;
+    ctx.fillText(sideLabel, mx+dx/dd*14, my+dy/dd*14);
+  }
+  ctx.fillStyle=col; ctx.shadowBlur=12;
+  pts.forEach(p=>{ ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill(); });
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   2. ÁREA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+let areaShape = 'cuadrado';
+
+function setShape(s) {
+  areaShape = s;
+  document.querySelectorAll('#sec-area .shape-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  initAreaInputs();
+}
+
+function initAreaInputs() {
+  const c = document.getElementById('area-inputs');
+  c.innerHTML = '';
+  const mk = (id,label,min,max,val)=>
+    `<div class="input-group" style="--c:var(--accent2)"><label>${label}</label><div class="slider-row">
+    <input type="range" id="${id}" min="${min}" max="${max}" value="${val}" oninput="updateArea()">
+    <span class="val-display" id="${id}-v">${val}</span></div></div>`;
+
+  if (areaShape==='cuadrado') c.innerHTML=mk('al','LADO (l)',1,15,8);
+  else if (areaShape==='rectangulo') c.innerHTML=mk('arb','BASE (b)',1,20,10)+mk('arh','ALTURA (h)',1,15,6);
+  else if (areaShape==='triangulo') c.innerHTML=mk('ab','BASE (b)',1,20,10)+mk('ah','ALTURA (h)',1,15,7);
+  else if (areaShape==='circulo') c.innerHTML=mk('ar','RADIO (r)',1,12,5);
+  else if (areaShape==='trapecio') c.innerHTML=mk('atb','BASE MAYOR (B)',2,20,12)+mk('ata','BASE MENOR (b)',1,18,8)+mk('ath','ALTURA (h)',1,15,6);
+  else if (areaShape==='rombo') c.innerHTML=mk('ad1','DIAGONAL MAYOR (d1)',2,20,12)+mk('ad2','DIAGONAL MENOR (d2)',2,20,8);
+  updateArea();
+}
+
+function updateArea() {
+  let formula='', step='', result='', s1='', s2='', s3='';
+  const col = 'var(--accent2)';
+
+  if (areaShape==='cuadrado') {
+    const l=+document.getElementById('al').value;
+    document.getElementById('al-v').textContent=l;
+    const A=l*l;
+    formula='A = l²'; step=`A = ${l}² = ${A}`; result=`A = ${A} u²`;
+    s1='Paso 1: A = lado²'; s2=`Paso 2: A = ${l} × ${l}`; s3=`Resultado: A = ${A} u²`;
+  } else if (areaShape==='rectangulo') {
+    const b=+document.getElementById('arb').value, h=+document.getElementById('arh').value;
+    document.getElementById('arb-v').textContent=b; document.getElementById('arh-v').textContent=h;
+    const A=b*h;
+    formula='A = b × h'; step=`A = ${b} × ${h}`; result=`A = ${A} u²`;
+    s1='Paso 1: A = base × altura'; s2=`Paso 2: A = ${b} × ${h}`; s3=`Resultado: A = ${A} u²`;
+  } else if (areaShape==='triangulo') {
+    const b=+document.getElementById('ab').value, h=+document.getElementById('ah').value;
+    document.getElementById('ab-v').textContent=b; document.getElementById('ah-v').textContent=h;
+    const A=(b*h/2).toFixed(2);
+    formula='A = (b × h) / 2'; step=`A = (${b} × ${h}) / 2`; result=`A = ${A} u²`;
+    s1='Paso 1: A = (base × altura) / 2'; s2=`Paso 2: A = ${b*h}/2`; s3=`Resultado: A = ${A} u²`;
+  } else if (areaShape==='circulo') {
+    const r=+document.getElementById('ar').value;
+    document.getElementById('ar-v').textContent=r;
+    const A=(Math.PI*r*r).toFixed(2);
+    formula='A = π × r²'; step=`A = π × ${r}²`; result=`A ≈ ${A} u²`;
+    s1='Paso 1: A = π × r²'; s2=`Paso 2: A ≈ 3.1416 × ${r*r}`; s3=`Resultado: A ≈ ${A} u²`;
+  } else if (areaShape==='trapecio') {
+    const B=+document.getElementById('atb').value, b=+document.getElementById('ata').value, h=+document.getElementById('ath').value;
+    document.getElementById('atb-v').textContent=B; document.getElementById('ata-v').textContent=b; document.getElementById('ath-v').textContent=h;
+    const A=((B+b)*h/2).toFixed(2);
+    formula='A = (B + b) × h / 2'; step=`A = (${B} + ${b}) × ${h} / 2`; result=`A = ${A} u²`;
+    s1='Paso 1: A = (base mayor + base menor) × h / 2'; s2=`Paso 2: A = ${B+b} × ${h} / 2`; s3=`Resultado: A = ${A} u²`;
+  } else if (areaShape==='rombo') {
+    const d1=+document.getElementById('ad1').value, d2=+document.getElementById('ad2').value;
+    document.getElementById('ad1-v').textContent=d1; document.getElementById('ad2-v').textContent=d2;
+    const A=(d1*d2/2).toFixed(2);
+    formula='A = (d1 × d2) / 2'; step=`A = (${d1} × ${d2}) / 2`; result=`A = ${A} u²`;
+    s1='Paso 1: A = (diagonal mayor × diagonal menor) / 2'; s2=`Paso 2: A = ${d1*d2}/2`; s3=`Resultado: A = ${A} u²`;
+  }
+
+  document.getElementById('a-formula').textContent=formula;
+  document.getElementById('a-step').textContent=step;
+  document.getElementById('a-result').textContent=result;
+  document.getElementById('a-s1').textContent=s1;
+  document.getElementById('a-s2').textContent=s2;
+  document.getElementById('a-s3').textContent=s3;
+  drawArea();
+}
+
+function drawArea() {
+  const { ctx, W, H } = setupCanvas('area-canvas');
+  ctx.clearRect(0,0,W,H);
+  const col = '#00ffb3';
+  const fill = 'rgba(0,255,179,0.1)';
+  const PAD = 45;
+  ctx.shadowColor = 'rgba(0,255,179,0.35)';
+
+  const txt = (t,x,y,size=11) => {
+    ctx.fillStyle=col; ctx.font=`700 ${size}px Space Mono,monospace`;
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(t,x,y);
+  };
+  const dot = (x,y) => { ctx.fillStyle=col; ctx.shadowBlur=10; ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill(); };
+
+  if (areaShape==='cuadrado') {
+    const l=+document.getElementById('al').value;
+    const maxSlider = 15;
+    const pxPerUnit = Math.min(W-PAD*2, H-PAD*2) / maxSlider;
+    const s = l * pxPerUnit;
+    const x=(W-s)/2, y=(H-s)/2;
+    ctx.shadowBlur=20; ctx.fillStyle=fill; ctx.fillRect(x,y,s,s);
+    ctx.strokeStyle=col; ctx.lineWidth=2; ctx.strokeRect(x,y,s,s);
+    txt(`l=${l}`,W/2,y-14); txt(`l=${l}`,x-22,H/2);
+    txt(`A=${l*l} u²`,W/2,H/2,13);
+    [x,x+s].forEach(px=>[y,y+s].forEach(py=>dot(px,py)));
+
+  } else if (areaShape==='rectangulo') {
+    const b=+document.getElementById('arb').value, h=+document.getElementById('arh').value;
+    const sc=Math.min((W-PAD*2)/b,(H-PAD*2)/h);
+    const rW=b*sc, rH=h*sc, x=(W-rW)/2, y=(H-rH)/2;
+    ctx.shadowBlur=20; ctx.fillStyle=fill; ctx.fillRect(x,y,rW,rH);
+    ctx.strokeStyle=col; ctx.lineWidth=2; ctx.strokeRect(x,y,rW,rH);
+    txt(`b=${b}`,W/2,y-14); txt(`h=${h}`,x+rW+22,H/2);
+    txt(`A=${b*h} u²`,W/2,H/2,13);
+    [[x,y],[x+rW,y],[x+rW,y+rH],[x,y+rH]].forEach(([px,py])=>dot(px,py));
+
+  } else if (areaShape==='triangulo') {
+    const b=+document.getElementById('ab').value, h=+document.getElementById('ah').value;
+    const sc=Math.min((W-PAD*2)/b,(H-PAD*2)/h);
+    const bW=b*sc, bH=h*sc;
+    const bx=(W-bW)/2, by=H-(H-bH)/2;
+    ctx.shadowBlur=18;
+    ctx.beginPath(); ctx.moveTo(bx+bW/2,by-bH); ctx.lineTo(bx+bW,by); ctx.lineTo(bx,by); ctx.closePath();
+    ctx.fillStyle=fill; ctx.fill(); ctx.strokeStyle=col; ctx.lineWidth=2; ctx.stroke();
+    ctx.setLineDash([4,3]); ctx.strokeStyle='rgba(0,255,179,0.5)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(bx+bW/2,by-bH); ctx.lineTo(bx+bW/2,by); ctx.stroke(); ctx.setLineDash([]);
+    txt(`b=${b}`,W/2,by+16); txt(`h=${h}`,bx+bW/2+22,by-bH/2);
+    txt(`A=${(b*h/2).toFixed(2)} u²`,W/2,by-bH/2-10,12);
+    [bx,bx+bW,bx+bW/2].forEach((px,i)=>dot(px,[by,by,by-bH][i]));
+
+  } else if (areaShape==='circulo') {
+    const r=+document.getElementById('ar').value;
+    const maxR=Math.min(W,H)/2-PAD;
+    const rs=Math.min(r*(maxR/12),maxR);
+    const cx2=W/2, cy2=H/2;
+    ctx.shadowBlur=25; ctx.beginPath(); ctx.arc(cx2,cy2,rs,0,Math.PI*2);
+    ctx.fillStyle=fill; ctx.fill(); ctx.strokeStyle=col; ctx.lineWidth=2; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx2,cy2); ctx.lineTo(cx2+rs,cy2);
+    ctx.strokeStyle='rgba(0,255,179,0.6)'; ctx.lineWidth=1.5;
+    ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
+    // Labels outside the circle
+    txt(`r=${r}`,cx2+rs/2,cy2-rs*0.5-10);
+    txt(`A≈${(Math.PI*r*r).toFixed(2)} u²`,cx2,cy2+rs+18);
+    dot(cx2,cy2); dot(cx2+rs,cy2);
+
+  } else if (areaShape==='trapecio') {
+    const B=+document.getElementById('atb').value, b=+document.getElementById('ata').value, h=+document.getElementById('ath').value;
+    const sc=Math.min((W-PAD*2)/B,(H-PAD*2)/h);
+    const BW=B*sc, bW=b*sc, bH=h*sc;
+    const x=(W-BW)/2, y=(H-bH)/2;
+    const offB=(BW-bW)/2;
+    ctx.shadowBlur=18;
+    ctx.beginPath();
+    ctx.moveTo(x,y+bH); ctx.lineTo(x+BW,y+bH); ctx.lineTo(x+BW-offB,y); ctx.lineTo(x+offB,y); ctx.closePath();
+    ctx.fillStyle=fill; ctx.fill(); ctx.strokeStyle=col; ctx.lineWidth=2; ctx.stroke();
+    ctx.setLineDash([3,3]); ctx.strokeStyle='rgba(0,255,179,0.4)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(x+BW/2,y); ctx.lineTo(x+BW/2,y+bH); ctx.stroke(); ctx.setLineDash([]);
+    txt(`B=${B}`,W/2,y+bH+16); txt(`b=${b}`,W/2,y-14);
+    txt(`h=${h}`,x+BW/2+22,(y+y+bH)/2);
+    txt(`A=${((B+b)*h/2).toFixed(2)} u²`,W/2,(y+y+bH)/2,12);
+    [[x,y+bH],[x+BW,y+bH],[x+BW-offB,y],[x+offB,y]].forEach(([px,py])=>dot(px,py));
+
+  } else if (areaShape==='rombo') {
+    const d1=+document.getElementById('ad1').value, d2=+document.getElementById('ad2').value;
+    const scX=Math.min((W-PAD*2)/d1,30), scY=Math.min((H-PAD*2)/d2,30);
+    const sc=Math.min(scX,scY);
+    const hw=d1*sc/2, hh=d2*sc/2;
+    const cx2=W/2, cy2=H/2;
+    ctx.shadowBlur=18;
+    ctx.beginPath();
+    ctx.moveTo(cx2,cy2-hh); ctx.lineTo(cx2+hw,cy2); ctx.lineTo(cx2,cy2+hh); ctx.lineTo(cx2-hw,cy2); ctx.closePath();
+    ctx.fillStyle=fill; ctx.fill(); ctx.strokeStyle=col; ctx.lineWidth=2; ctx.stroke();
+    ctx.setLineDash([3,3]); ctx.strokeStyle='rgba(0,255,179,0.4)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(cx2-hw,cy2); ctx.lineTo(cx2+hw,cy2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx2,cy2-hh); ctx.lineTo(cx2,cy2+hh); ctx.stroke();
+    ctx.setLineDash([]);
+    txt(`d1=${d1}`,cx2,cy2-hh-14); txt(`d2=${d2}`,cx2+hw+22,cy2);
+    txt(`A=${(d1*d2/2).toFixed(2)} u²`,cx2,cy2,12);
+    [[cx2,cy2-hh],[cx2+hw,cy2],[cx2,cy2+hh],[cx2-hw,cy2]].forEach(([px,py])=>dot(px,py));
+  }
+  ctx.shadowBlur=0;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   3. VOLUMEN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+let volShape = 'cubo';
+
+function setVolShape(s) {
+  volShape = s;
+  document.querySelectorAll('#sec-volumen .shape-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  // show/hide 3D visuals
+  document.getElementById('vol-3d-css').style.display = (s==='cubo') ? '' : 'none';
+  document.getElementById('vol-3d-sphere').style.display = s==='esfera' ? '' : 'none';
+  initVolInputs();
+}
+
+function initVolInputs() {
+  const c = document.getElementById('vol-inputs');
+  c.innerHTML = '';
+  const mk=(id,label,min,max,val)=>
+    `<div class="input-group" style="--c:var(--accent3)"><label>${label}</label><div class="slider-row">
+    <input type="range" id="${id}" min="${min}" max="${max}" value="${val}" oninput="updateVol()">
+    <span class="val-display" id="${id}-v">${val}</span></div></div>`;
+
+  if (volShape==='cubo') c.innerHTML=mk('va','ARISTA (a)',1,12,5);
+  else if (volShape==='cilindro') c.innerHTML=mk('vr','RADIO (r)',1,10,4)+mk('vh','ALTURA (h)',1,15,8);
+  else if (volShape==='prisma') c.innerHTML=mk('vl','LARGO (l)',1,15,8)+mk('vw','ANCHO (w)',1,12,5)+mk('vh2','ALTURA (h)',1,12,6);
+  else if (volShape==='esfera') c.innerHTML=mk('vrs','RADIO (r)',1,10,5);
+  updateVol();
+}
+
+function updateVol() {
+  let formula='', step='', result='', s1='', s2='', s3='';
+
+  if (volShape==='cubo') {
+    const a=+document.getElementById('va').value;
+    document.getElementById('va-v').textContent=a;
+    const V=a*a*a;
+    formula='V = a³'; step=`V = ${a}³ = ${V}`; result=`V = ${V} u³`;
+    s1='Paso 1: V = a³'; s2=`Paso 2: V = ${a} × ${a} × ${a}`; s3=`Resultado: V = ${V} u³`;
+    const sc=Math.max(60,Math.min(130,a*10));
+    document.querySelector('.cube-wrap').style.width=sc+'px'; document.querySelector('.cube-wrap').style.height=sc+'px';
+    resizeCubeFaces(sc);
+
+  } else if (volShape==='cilindro') {
+    const r=+document.getElementById('vr').value, h=+document.getElementById('vh').value;
+    document.getElementById('vr-v').textContent=r; document.getElementById('vh-v').textContent=h;
+    const V=(Math.PI*r*r*h).toFixed(2);
+    formula='V = π × r² × h'; step=`V = π × ${r}² × ${h}`; result=`V ≈ ${V} u³`;
+    s1='Paso 1: V = π × r² × h'; s2=`Paso 2: V = π × ${r*r} × ${h}`; s3=`Resultado: V ≈ ${V} u³`;
+
+  } else if (volShape==='prisma') {
+    const l=+document.getElementById('vl').value, w=+document.getElementById('vw').value, h=+document.getElementById('vh2').value;
+    document.getElementById('vl-v').textContent=l; document.getElementById('vw-v').textContent=w; document.getElementById('vh2-v').textContent=h;
+    const V=l*w*h;
+    formula='V = l × w × h'; step=`V = ${l} × ${w} × ${h}`; result=`V = ${V} u³`;
+    s1='Paso 1: V = largo × ancho × altura'; s2=`Paso 2: V = ${l} × ${w} × ${h}`; s3=`Resultado: V = ${V} u³`;
+
+  } else if (volShape==='esfera') {
+    const r=+document.getElementById('vrs').value;
+    document.getElementById('vrs-v').textContent=r;
+    const V=((4/3)*Math.PI*r*r*r).toFixed(2);
+    formula='V = (4/3) × π × r³'; step=`V = (4/3) × π × ${r}³`; result=`V ≈ ${V} u³`;
+    s1='Paso 1: V = (4/3) × π × r³'; s2=`Paso 2: V = 4.189 × ${(r*r*r).toFixed(2)}`; s3=`Resultado: V ≈ ${V} u³`;
+    // animate sphere size
+    const px=Math.max(60,Math.min(140,r*14));
+    const sp=document.getElementById('sphere3d');
+    if(sp){ sp.style.width=px+'px'; sp.style.height=px+'px'; }
+  }
+
+  document.getElementById('v-formula').textContent=formula;
+  document.getElementById('v-step').textContent=step;
+  document.getElementById('v-result').textContent=result;
+  document.getElementById('v-s1').textContent=s1;
+  document.getElementById('v-s2').textContent=s2;
+  document.getElementById('v-s3').textContent=s3;
+  drawVol();
+}
+
+function resizeCubeFaces(s) {
+  const half=s/2;
+  const transforms=[
+    `translateZ(${half}px)`,`rotateY(180deg) translateZ(${half}px)`,
+    `rotateY(-90deg) translateZ(${half}px)`,`rotateY(90deg) translateZ(${half}px)`,
+    `rotateX(90deg) translateZ(${half}px)`,`rotateX(-90deg) translateZ(${half}px)`
+  ];
+  document.querySelectorAll('.cube-face').forEach((f,i)=>f.style.transform=transforms[i]);
+}
+
+function drawVol() {
+  const { ctx, W, H } = setupCanvas('vol-canvas');
+  ctx.clearRect(0,0,W,H);
+  const col='#ff4d6d';
+  ctx.fillStyle=col; ctx.font='700 12px Space Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+
+  if (volShape==='cubo') {
+    const a=+document.getElementById('va').value;
+    // isometric cube drawing
+    drawIsoCube(ctx, W, H, a, a, a, col);
+  } else if (volShape==='cilindro') {
+    const r=+document.getElementById('vr').value, h=+document.getElementById('vh').value;
+    drawCylinder(ctx, W, H, r, h, col);
+  } else if (volShape==='prisma') {
+    const l=+document.getElementById('vl').value, w=+document.getElementById('vw').value, h=+document.getElementById('vh2').value;
+    drawIsoCube(ctx, W, H, l, w, h, col);
+  } else if (volShape==='esfera') {
+    const r=+document.getElementById('vrs').value;
+    drawSphereCanvas(ctx, W, H, r, col);
+  }
+  ctx.shadowBlur=0;
+}
+
+function drawIsoCube(ctx, W, H, l, w, h, col) {
+  const maxD = Math.max(l, w, h);
+  const unit = Math.min(W / (maxD * 3.5 + 2), (H - 40) / (maxD * 2.2 + 2));
+  const u = unit;
+  const ax = Math.cos(Math.PI/6), ay = Math.sin(Math.PI/6);
+  const ls = l*u, ws = w*u, hs = h*u;
+
+  // Compute all vertex Y positions relative to origin at (0,0)
+  // to find bounding box, then center it in the canvas
+  const relRight = -ls*ay;
+  const relLeft  = -ws*ay;
+  const relTop   = -hs;
+  const relTr    = relRight - hs;
+  const relTl    = relLeft  - hs;
+  const relTc    = -ls*ay - ws*ay - hs;
+  const minY = Math.min(0, relRight, relLeft, relTop, relTr, relTl, relTc);
+  const maxY = Math.max(0, relRight, relLeft, relTop, relTr, relTl, relTc);
+  const shapeH = maxY - minY;
+  // Center: origin sits at (cx, cy) where cy = canvas center minus the shape's midpoint offset
+  const cx = W / 2;
+  const cy = (H - shapeH) / 2 - minY + 20; // 20px top padding
+
+  const o   = {x: cx,            y: cy};
+  const right = {x: cx + ls*ax,  y: cy - ls*ay};
+  const left  = {x: cx - ws*ax,  y: cy - ws*ay};
+  const top   = {x: cx,          y: cy - hs};
+  const tr    = {x: right.x,     y: right.y - hs};
+  const tl    = {x: left.x,      y: left.y  - hs};
+  const tc    = {x: cx + ls*ax - ws*ax, y: cy - ls*ay - ws*ay - hs};
+
+  const fill=(pts,color)=>{
+    ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+    pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y)); ctx.closePath();
+    ctx.fillStyle=color; ctx.fill();
+    ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.stroke();
+  };
+
+  ctx.shadowColor='rgba(255,77,109,0.3)'; ctx.shadowBlur=15;
+  // bottom face (not visible)
+  // left face
+  fill([o,left,tl,top], 'rgba(255,77,109,0.06)');
+  // right face
+  fill([o,right,tr,top], 'rgba(255,77,109,0.1)');
+  // top face
+  fill([top,tr,tc,tl], 'rgba(255,77,109,0.18)');
+  ctx.shadowBlur=0;
+
+  // labels
+  ctx.fillStyle=col; ctx.font='600 10px Space Mono,monospace'; ctx.textAlign='center';
+  ctx.fillText(`l=${l}`, (o.x+right.x)/2+3, (o.y+right.y)/2+14);
+  ctx.fillText(`w=${w}`, (o.x+left.x)/2-8, (o.y+left.y)/2+14);
+  ctx.fillText(`h=${h}`, top.x+20, (top.y+o.y)/2);
+}
+
+function drawCylinder(ctx, W, H, r, h, col) {
+  const maxD=Math.max(r*2,h);
+  const unit=Math.min(W/(r*2+4),(H-30)/(h+2));
+  const rx=Math.min(r*unit,W*0.35), ry=rx*0.28;
+  const ch=Math.min(h*unit,H-ry*4-30);
+  const cx=W/2, ty=H/2-ch/2-ry, by=H/2+ch/2;
+
+  ctx.shadowColor='rgba(255,77,109,0.3)'; ctx.shadowBlur=15;
+  // body
+  ctx.beginPath();
+  ctx.moveTo(cx-rx,ty); ctx.lineTo(cx-rx,by); ctx.bezierCurveTo(cx-rx,by+ry*2,cx+rx,by+ry*2,cx+rx,by); ctx.lineTo(cx+rx,ty);
+  ctx.fillStyle='rgba(255,77,109,0.08)'; ctx.fill();
+  ctx.strokeStyle=col; ctx.lineWidth=2; ctx.stroke();
+  // bottom ellipse
+  ctx.beginPath(); ctx.ellipse(cx,by,rx,ry,0,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,77,109,0.15)'; ctx.fill();
+  ctx.strokeStyle=col; ctx.lineWidth=2; ctx.stroke();
+  // top ellipse
+  ctx.beginPath(); ctx.ellipse(cx,ty,rx,ry,0,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,77,109,0.22)'; ctx.fill();
+  ctx.strokeStyle=col; ctx.lineWidth=2; ctx.stroke();
+  ctx.shadowBlur=0;
+  // labels
+  ctx.fillStyle=col; ctx.font='600 10px Space Mono,monospace'; ctx.textAlign='center';
+  ctx.fillText(`r=${r}`, cx+rx/2, ty-ry-8);
+  ctx.fillText(`h=${h}`, cx+rx+22, (ty+by)/2);
+  // radius line on top
+  ctx.beginPath(); ctx.moveTo(cx,ty); ctx.lineTo(cx+rx,ty);
+  ctx.strokeStyle='rgba(255,77,109,0.6)'; ctx.lineWidth=1.5; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+  // height line
+  ctx.beginPath(); ctx.moveTo(cx+rx+12,ty); ctx.lineTo(cx+rx+12,by);
+  ctx.strokeStyle='rgba(255,77,109,0.4)'; ctx.lineWidth=1; ctx.stroke();
+}
+
+function drawSphereCanvas(ctx, W, H, r, col) {
+  const maxR=Math.min(W,H)/2-30;
+  const rs=Math.min(r*maxR/10,maxR);
+  const cx=W/2, cy=H/2;
+  // main circle
+  const grad=ctx.createRadialGradient(cx-rs*0.3,cy-rs*0.3,0,cx,cy,rs);
+  grad.addColorStop(0,'rgba(255,77,109,0.6)');
+  grad.addColorStop(0.6,'rgba(255,77,109,0.2)');
+  grad.addColorStop(1,'rgba(100,0,30,0.7)');
+  ctx.shadowColor='rgba(255,77,109,0.5)'; ctx.shadowBlur=30;
+  ctx.beginPath(); ctx.arc(cx,cy,rs,0,Math.PI*2);
+  ctx.fillStyle=grad; ctx.fill();
+  ctx.strokeStyle=col; ctx.lineWidth=2; ctx.stroke();
+  ctx.shadowBlur=0;
+  // equator ellipse
+  ctx.beginPath(); ctx.ellipse(cx,cy,rs,rs*0.25,0,0,Math.PI*2);
+  ctx.strokeStyle='rgba(255,77,109,0.4)'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+  // vertical line
+  ctx.beginPath(); ctx.moveTo(cx,cy-rs); ctx.lineTo(cx,cy+rs);
+  ctx.strokeStyle='rgba(255,77,109,0.3)'; ctx.lineWidth=1; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+  // radius line
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+rs,cy);
+  ctx.strokeStyle='rgba(255,77,109,0.7)'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.fillStyle=col; ctx.beginPath(); ctx.arc(cx,cy,4,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx+rs,cy,3,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=col; ctx.font='700 11px Space Mono,monospace'; ctx.textAlign='center';
+  ctx.fillText(`r=${r}`,cx+rs/2,cy-14);
+  ctx.fillText(`V≈${((4/3)*Math.PI*r*r*r).toFixed(2)} u³`,cx,cy+rs+18);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   4. PITÁGORAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function updatePit() {
+  const a=+document.getElementById('pa').value;
+  const b=+document.getElementById('pit-b').value;
+  const c=Math.sqrt(a*a+b*b);
+  document.getElementById('pa-v').textContent=a;
+  document.getElementById('pb2-v').textContent=b;
+  document.getElementById('pit-step').textContent=`${a}² + ${b}² = c²`;
+  document.getElementById('pit-step2').textContent=`${a*a} + ${b*b} = ${(c*c).toFixed(2)}`;
+  document.getElementById('pit-result').textContent=`c = ${c.toFixed(2)}`;
+
+  // squares viz — clamp to avoid massive boxes
+  const maxPx=80;
+  const maxVal=Math.max(a,b,c);
+  const sc=maxPx/maxVal;
+  const setBox=(id,size)=>{
+    const el=document.getElementById(id);
+    const px=Math.max(10,size*sc);
+    el.style.width=px+'px'; el.style.height=px+'px';
+  };
+  setBox('sq-a',a);
+  setBox('sq-b',b);
+  setBox('sq-c',c);
+
+  drawPit();
+}
+
+function drawPit() {
+  const { ctx, W, H } = setupCanvas('pitagoras-canvas');
+  ctx.clearRect(0,0,W,H);
+
+  const a=+document.getElementById('pa').value;
+  const b=+document.getElementById('pit-b').value;
+  const c=Math.sqrt(a*a+b*b);
+
+  const PAD=55;
+  // scale so triangle fits nicely
+  const scl=Math.min((W-PAD*2)/b, (H-PAD*2)/a) * 0.85;
+  const bW=b*scl, aH=a*scl;
+
+  // Center the triangle with enough room for labels on all sides
+  const ox = PAD + (W - PAD*2 - bW) / 2;
+  const oy = (H + aH) / 2;
+
+  const pts=[
+    {x:ox,      y:oy},
+    {x:ox+bW,   y:oy},
+    {x:ox,      y:oy-aH},
+  ];
+
+  // fill
+  ctx.beginPath(); pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.closePath();
+  ctx.fillStyle='rgba(191,95,255,0.08)'; ctx.fill();
+
+  const colors=['#bf5fff','#f472b6','#ffe133'];
+  const labels=[`a = ${a}`,`b = ${b}`,`c ≈ ${c.toFixed(2)}`];
+  const edges=[[2,0],[0,1],[1,2]];
+  // midpoints offset outward — ensure cateto a (left vertical side) has enough room
+  const midpoints=[
+    {x: Math.max(PAD-8, pts[0].x - 44), y:(pts[0].y+pts[2].y)/2},
+    {x:(pts[0].x+pts[1].x)/2, y:pts[0].y+22},
+    {x:(pts[1].x+pts[2].x)/2+32, y:(pts[1].y+pts[2].y)/2},
+  ];
+
+  edges.forEach(([i1,i2],idx)=>{
+    ctx.shadowColor=colors[idx]; ctx.shadowBlur=10;
+    ctx.strokeStyle=colors[idx]; ctx.lineWidth=idx===2?3:2;
+    ctx.beginPath(); ctx.moveTo(pts[i1].x,pts[i1].y); ctx.lineTo(pts[i2].x,pts[i2].y); ctx.stroke();
+    ctx.shadowBlur=0;
+    // Draw label background for legibility
+    const lx=midpoints[idx].x, ly=midpoints[idx].y;
+    ctx.font=`700 11px Space Mono,monospace`;
+    const tw=ctx.measureText(labels[idx]).width;
+    ctx.fillStyle='rgba(8,8,16,0.7)';
+    ctx.fillRect(lx-tw/2-3, ly-8, tw+6, 16);
+    ctx.fillStyle=colors[idx]; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(labels[idx],lx,ly);
+  });
+
+  // right angle mark at pts[0]
+  const sq=12;
+  ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=1; ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x+sq, pts[0].y);
+  ctx.lineTo(pts[0].x+sq, pts[0].y-sq);
+  ctx.lineTo(pts[0].x,    pts[0].y-sq);
+  ctx.stroke();
+
+  // vertices
+  pts.forEach((p,i)=>{
+    ctx.fillStyle=colors[i]; ctx.shadowColor=colors[i]; ctx.shadowBlur=14;
+    ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.fill();
+  });
+  ctx.shadowBlur=0;
+
+  // a² + b² = c² labels inside with backgrounds
+  const fs=10;
+  ctx.font=`600 ${fs}px Space Mono,monospace`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  const drawLabelBg=(text,x,y,color)=>{
+    const tw=ctx.measureText(text).width;
+    ctx.fillStyle='rgba(8,8,16,0.65)';
+    ctx.fillRect(x-tw/2-2,y-7,tw+4,14);
+    ctx.fillStyle=color; ctx.fillText(text,x,y);
+  };
+  drawLabelBg(`a²=${a*a}`, Math.max(PAD+10, pts[0].x - 28), (pts[0].y+pts[2].y)/2 + 16, 'rgba(191,95,255,0.9)');
+  drawLabelBg(`b²=${b*b}`, (pts[0].x+pts[1].x)/2, pts[0].y+36, 'rgba(244,114,182,0.9)');
+  drawLabelBg(`c²=${(c*c).toFixed(1)}`, (pts[1].x+pts[2].x)/2+32, (pts[1].y+pts[2].y)/2-12, 'rgba(255,225,51,0.9)');
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   INIT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+window.addEventListener('load', () => {
+  initPerInputs();
+  initAreaInputs();
+  initVolInputs();
+  updatePit();
+  resizeCubeFaces(100);
+  animLoop();
+});
+
+window.addEventListener('resize', () => {
+  drawPerimetro();
+  drawArea();
+  drawVol();
+  drawPit();
+});
+</script>
+</body>
+</html>
